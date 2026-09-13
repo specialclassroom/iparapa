@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>『이파라파냐무냐무』 독후활동</title>
+  
+  <!-- 눈이 편안한 한글 둥근 웹폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nanum+Round:wght@400;700;800&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            marshmallow: '#FFFDF9',
+            fluffyBrown: '#6C4A33',
+            fluffyDark: '#4A3222',
+            softPeach: '#FFEDD5',
+            warmOrange: '#F97316',
+            mintGreen: '#10B981',
+            skyBlue: '#0EA5E9',
+            lightYellow: '#FEF3C7',
+          },
+          fontFamily: {
+            round: ['"Nanum Round"', '"Gaegu"', 'sans-serif'],
+            sans: ['"Noto Sans KR"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      font-family: 'Nanum Round', 'Noto Sans KR', sans-serif;
+      background: linear-gradient(135deg, #FFF6EE 0%, #FEEBD7 40%, #E0F2FE 100%);
+      min-height: 100vh;
+      color: #332720;
+      overflow-x: hidden;
+    }
+    .app-screen {
+      display: none;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .app-screen.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .bubble-card {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(10px);
+      border: 3px solid #FED7AA;
+      box-shadow: 0 16px 36px -10px rgba(108, 74, 51, 0.12), 0 4px 10px rgba(0, 0, 0, 0.04);
+      border-radius: 2rem;
+    }
+    .choice-card {
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .choice-card:hover {
+      transform: translateY(-3px) scale(1.01);
+    }
+    .choice-card.selected {
+      border-color: #F97316;
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+      box-shadow: 0 10px 24px -6px rgba(249, 115, 22, 0.35);
+      transform: scale(1.02);
+    }
+    .pulse-animation {
+      animation: gentle-pulse 2.2s infinite ease-in-out;
+    }
+    @keyframes gentle-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+    .bounce-in {
+      animation: bounce-in 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes bounce-in {
+      0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-3 md:p-6 text-base md:text-lg">
+
+  <div id="app-container" class="w-full max-w-2xl flex flex-col justify-between flex-1 pb-24 md:pb-28">
+
+    <!-- 상단 헤더 -->
+    <header id="app-header" class="w-full mb-3 md:mb-5">
+      <div class="header-content flex items-center justify-between bg-white/80 border-2 border-orange-200 rounded-3xl p-3 md:px-5 shadow-sm">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl animate-bounce">🥟</span>
+          <h1 id="app-main-title" class="font-extrabold text-lg md:text-xl text-fluffyBrown tracking-tight">
+            『이파라파냐무냐무』 독후활동
+          </h1>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- 진행 상황 뱃지 -->
+          <div id="header-progress" class="hidden items-center bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-bold border border-orange-300">
+            <span id="progress-text">1 / 7</span>
+            <span id="progress-bar-visual" class="ml-2 tracking-widest text-xs hidden sm:inline">■□□□□□□</span>
+          </div>
+
+          <!-- 음성 안내(TTS) 버튼 -->
+          <button id="btn-header-tts" class="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-500 active:scale-95 text-amber-950 font-bold px-3 py-1.5 rounded-full shadow transition-transform text-sm" title="소리 듣기">
+            <span class="text-base" id="tts-icon-status">🔊</span>
+            <span class="hidden sm:inline">읽어주기</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content" class="w-full flex-1 flex flex-col">
+
+      <!-- [화면 1] 학생 시작 및 정보 입력 화면 (STEP 0) -->
+      <section id="screen-intro" class="app-screen active flex-col justify-center items-center w-full">
+        <div class="bubble-card w-full p-6 md:p-8 text-center flex flex-col items-center">
+          <div class="inline-flex items-center gap-2 bg-orange-100 border border-orange-300 px-4 py-1.5 rounded-full text-orange-800 font-bold text-sm mb-4">
+            <span class="text-lg">📖</span>
+            <span>마음을 나누는 그림책 여행</span>
+          </div>
+
+          <!-- 그림책 표지 이미지 배너 -->
+          <div class="w-48 sm:w-56 aspect-[4/3] rounded-3xl overflow-hidden border-4 border-amber-300 shadow-lg mb-4 bg-amber-50 flex items-center justify-center relative transform hover:scale-105 transition-transform duration-300">
+            <img 
+              src="https://image.yes24.com/goods/90461037/XL" 
+              alt="『이파라파냐무냐무』 책 표지" 
+              class="w-full h-full object-cover"
+              onerror="this.onerror=null; this.src='책표지이미지1.jpg';"
+            >
+          </div>
+
+          <h2 class="text-2xl md:text-3xl font-black text-fluffyBrown leading-tight mb-2">
+            『이파라파냐무냐무』<br>
+            <span class="text-orange-500 text-xl md:text-2xl font-bold">생각 쑥쑥 독후활동</span>
+          </h2>
+          <p class="text-stone-600 text-sm md:text-base mb-6 font-medium">
+            털숭숭이와 마시멜로 친구들의 이야기를 떠올리며<br class="hidden sm:inline">
+            나의 다정하고 솔직한 생각을 골라 보아요!
+          </p>
+
+          <!-- 학생 정보 선택 영역 -->
+          <div class="w-full bg-orange-50/70 border-2 border-orange-200 rounded-2xl p-4 md:p-5 text-left mb-6 space-y-4">
+            <!-- 1단계: 학급 선택 -->
+            <div class="select-group">
+              <label class="block text-stone-700 font-bold text-sm md:text-base mb-2 flex items-center gap-1.5">
+                <span>🏫</span> 우리 반을 골라주세요
+              </label>
+              <div id="class-buttons" class="grid grid-cols-3 gap-2">
+                <!-- 동적으로 반 버튼 삽입 -->
+              </div>
+            </div>
+
+            <!-- 2단계: 이름 선택 -->
+            <div id="student-select-section" class="select-group hidden pt-2 border-t border-orange-200">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-stone-700 font-bold text-sm md:text-base flex items-center gap-1.5">
+                  <span>👤</span> 내 이름을 골라주세요
+                </label>
+                <button id="btn-custom-name-toggle" class="text-xs text-orange-600 underline hover:text-orange-800">
+                  직접 이름 쓰기
+                </button>
+              </div>
+
+              <!-- 직접 입력 폼 (토글 가능) -->
+              <div id="custom-name-form" class="hidden mb-3">
+                <div class="flex gap-2">
+                  <input type="text" id="custom-name-input" placeholder="이름을 입력하세요 (예: 김하늘)" maxlength="8"
+                         class="flex-1 px-3 py-2 rounded-xl border-2 border-orange-300 focus:outline-none focus:border-orange-500 text-sm font-bold">
+                  <button id="btn-apply-custom-name" class="bg-orange-500 text-white font-bold px-3 py-2 rounded-xl text-sm hover:bg-orange-600">
+                    확인
+                  </button>
+                </div>
+              </div>
+
+              <div id="student-buttons" class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1 pr-2">
+                <!-- 선택된 학급의 학생 명단 버튼 삽입 -->
+              </div>
+            </div>
+
+            <!-- 선택된 학생 정보 확인 문구 -->
+            <div id="selected-identity-tag" class="hidden text-center bg-orange-200/70 py-2 rounded-xl text-orange-900 font-bold text-sm">
+              ✨ <span id="confirmed-class-name"></span> <span id="confirmed-student-name"></span>(으)로 시작합니다!
+            </div>
+          </div>
+
+          <!-- 시작하기 버튼 -->
+          <button id="btn-start-activity" class="w-full py-4 rounded-2xl font-black text-lg md:text-xl shadow-lg transition-all flex items-center justify-center gap-2 bg-stone-300 text-stone-500 cursor-not-allowed" disabled>
+            <span class="text-2xl">🚀</span>
+            <span>활동 시작하기</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- [화면 2] 독후활동 문항 화면 (STEP 1 ~ STEP 7) -->
+      <section id="screen-question" class="app-screen flex-col w-full">
+        <div class="bubble-card w-full p-5 md:p-8 flex flex-col">
+          
+          <!-- 단계 헤더 & 문항 다시듣기 -->
+          <div class="flex items-center justify-between mb-4 border-b border-orange-100 pb-3">
+            <div class="flex items-center gap-2">
+              <span id="question-step-badge" class="bg-orange-500 text-white font-black text-xs md:text-sm px-3 py-1 rounded-full shadow-sm">
+                STEP 1
+              </span>
+              <span id="question-step-title" class="font-bold text-stone-700 text-sm md:text-base">
+                책 내용 떠올리기
+              </span>
+            </div>
+
+            <button id="btn-question-tts" class="bg-amber-100 hover:bg-amber-200 text-amber-900 p-2 rounded-full border border-amber-300 flex items-center justify-center transition-transform active:scale-95 shadow-sm" title="질문 음성 듣기">
+              <span class="text-xl">🔊</span>
+            </button>
+          </div>
+
+          <!-- 질문 텍스트 -->
+          <div class="mb-5">
+            <h2 id="question-text" class="text-lg md:text-2xl font-black text-stone-800 leading-snug break-keep">
+              문항 질문이 표시됩니다.
+            </h2>
+            <p id="question-hint" class="text-xs md:text-sm text-stone-500 mt-1 font-semibold">
+              가장 마음에 와닿는 생각을 골라보세요.
+            </p>
+          </div>
+
+          <!-- 큰 선택지 카드 영역 -->
+          <div id="choices-container" class="grid grid-cols-1 gap-3 md:gap-4 my-2">
+            <!-- 자바스크립트로 선택지 버튼들이 동적 렌더링 됨 -->
+          </div>
+
+          <!-- 선택 격려 힌트 -->
+          <div class="mt-4 text-center text-xs text-stone-400 font-bold">
+            💡 고른 뒤 아래의 [다음 ➡️] 버튼을 눌러주세요
+          </div>
+        </div>
+      </section>
+
+      <!-- [화면 3] 완료 화면 (STEP 8) -->
+      <section id="screen-complete" class="app-screen flex-col w-full">
+        <div class="bubble-card w-full p-6 md:p-8 text-center flex flex-col items-center">
+          <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center text-5xl mb-3 shadow-inner animate-bounce">
+            🎉
+          </div>
+          <h2 class="text-2xl md:text-3xl font-black text-fluffyBrown mb-1">
+            참 잘했어요! 대단해요!
+          </h2>
+          <p class="text-stone-600 text-sm md:text-base mb-4 font-bold">
+            <span id="complete-student-name" class="text-orange-600 font-black underline text-lg">어린이</span> 친구가<br>
+            『이파라파냐무냐무』 독후활동을 멋지게 마쳤어요! 👏
+          </p>
+
+          <!-- 저장 상태 표시 배너 -->
+          <div id="save-status-text" class="w-full bg-emerald-100 text-emerald-800 border border-emerald-300 py-2.5 px-4 rounded-xl text-sm font-bold mb-6 flex items-center justify-center gap-2">
+            <span>✅</span> 나의 생각이 안전하게 잘 기록되었습니다!
+          </div>
+
+          <!-- 내 활동 요약 카드 리스트 -->
+          <div class="w-full text-left mb-6">
+            <h3 class="text-stone-800 font-black text-base md:text-lg mb-3 flex items-center gap-2">
+              <span>📝</span> 내가 고른 예쁜 생각들 모음
+            </h3>
+            <div id="my-answers-summary" class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+              <!-- 학생이 고른 7개 답변 요약이 동적으로 카드 형태로 들어옴 -->
+            </div>
+          </div>
+
+          <!-- 다시하기 버튼 & 다운로드 기능 -->
+          <div class="w-full flex flex-col sm:flex-row gap-3">
+            <button id="btn-copy-summary" class="flex-1 py-3.5 bg-amber-400 hover:bg-amber-500 active:scale-95 text-amber-950 font-black rounded-2xl shadow transition text-base flex items-center justify-center gap-2">
+              <span>📋</span> 내 생각 복사하기
+            </button>
+            <button id="btn-restart" class="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black rounded-2xl shadow-lg transition text-base flex items-center justify-center gap-2">
+              <span>🔄</span> 처음으로 다시하기
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 하단 고정 네비게이션 -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/90 backdrop-blur-md border-t-2 border-orange-200 z-30 hidden">
+      <div class="max-w-2xl mx-auto flex items-center justify-between gap-4">
+        <button id="btn-prev" class="flex-1 py-3.5 px-5 bg-stone-200 hover:bg-stone-300 disabled:opacity-40 disabled:hover:bg-stone-200 font-black text-stone-700 rounded-2xl flex items-center justify-center gap-2 text-base md:text-lg transition-transform active:scale-95" disabled>
+          <span>⬅️</span>
+          <span>이전</span>
+        </button>
+
+        <button id="btn-next" class="flex-1 py-3.5 px-5 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-300 disabled:text-stone-400 text-white font-black rounded-2xl flex items-center justify-center gap-2 text-base md:text-lg shadow-md transition-transform active:scale-95" disabled>
+          <span>다음</span>
+          <span>➡️</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- 인터랙티브 피드백 모달 (정답 칭찬 토스트) -->
+    <div id="feedback-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+      <div id="feedback-box" class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-4 border-orange-300 transform scale-90 transition-transform duration-300">
+        <div id="feedback-icon" class="text-5xl mb-2 animate-bounce">⭐</div>
+        <h3 id="feedback-title" class="text-xl font-black text-fluffyBrown mb-1">참 잘했어요! 👏</h3>
+        <p id="feedback-desc" class="text-stone-600 text-sm font-bold">멋진 생각을 골랐군요!</p>
+      </div>
+    </div>
+
+    <!-- 토스트 알림창 -->
+    <div id="toast-message" class="fixed top-5 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-xl opacity-0 pointer-events-none transition-all duration-300 z-50">
+      알림 메시지
+    </div>
+
+  </div>
+
+  <script>
+    /* ==========================================================================
+       [1] 데이터 정의 (학급 및 7단계 독후활동 질문 문항)
+       ========================================================================== */
+    const APP_CONFIG = {
+      title: "『이파라파냐무냐무』 독후활동",
+      totalSteps: 7,
+      classes: ["1학년 1반", "1학년 2반", "1학년 3반"]
+    };
+
+    // 샘플 학생 명단
+    const STUDENTS_DATA = {
+      "1학년 1반": ["김은서", "양세은", "김소민", "최진주", "배창현", "차호진", "이대은"],
+      "1학년 2반": ["김승민", "김지민", "이진용", "서민재", "최광현"],
+      "1학년 3반": ["박미주", "황수민", "조우현", "박은수", "이요한", "정찬웅"]
+    };
+
+    // 『이파라파냐무냐무』(이지은 작가) 도서 맞춤형 7단계 질문과 선택지
+    const QUESTIONS_DATA = [
+      {
+        step: 1,
+        title: "책 내용 떠올리기",
+        question: "평화로운 마시멜로 마을에 거대한 검은 털숭숭이가 나타났을 때, 마시멜로 친구들의 기분은 어땠을까요?",
+        hint: "처음 보는 커다란 존재를 만났을 때를 상상해 보세요.",
+        choices: [
+          { id: "A", icon: "😱", text: "쿵쾅쿵쾅 너무 무섭고 도망치고 싶었어요." },
+          { id: "B", icon: "😲", text: "저게 대체 누구일까? 궁금하고 신기했어요." },
+          { id: "C", icon: "🥱", text: "아무 생각 없이 그냥 하던 놀이를 계속했어요." }
+        ]
+      },
+      {
+        step: 2,
+        title: "털숭숭이의 말 알아채기",
+        question: "털숭숭이가 울부짖으며 외친 '이파라파냐무냐무'는 사실 어떤 뜻이었나요?",
+        hint: "털숭숭이의 볼이 왜 퉁퉁 부어 있었을까요?",
+        choices: [
+          { id: "A", icon: "🦷", text: "'이 아파! 너무 너무!' (충치가 생겨서 너무 아파요!)" },
+          { id: "B", icon: "🍖", text: "'마시멜로를 다 잡아먹어 버리겠다!'" },
+          { id: "C", icon: "🎶", text: "'친구들아 이리 와서 신나게 춤추자!'" }
+        ]
+      },
+      {
+        step: 3,
+        title: "작은 용기 발견하기",
+        question: "모두가 무서워서 도망치고 숨을 때, 용감한 꼬마 마시멜로는 어떻게 행동했나요?",
+        hint: "괴물의 큰 소리에 숨지 않고 다가간 꼬마 마시멜로를 떠올려봐요.",
+        choices: [
+          { id: "A", icon: "🔍", text: "가까이 다가가 털숭숭이의 입 속을 용기 있게 들여다보았어요." },
+          { id: "B", icon: "🏹", text: "털숭숭이를 물리치려고 무기를 들고 공격했어요." },
+          { id: "C", icon: "🚪", text: "제일 깊은 동굴로 들어가 문을 꽁꽁 잠갔어요." }
+        ]
+      },
+      {
+        step: 4,
+        title: "털숭숭이 돕기 작전",
+        question: "마시멜로 친구들은 아파하는 털숭숭이를 도와주기 위해 무엇을 함께 했나요?",
+        hint: "충치 벌레를 잡으려면 무엇이 필요할까요?",
+        choices: [
+          { id: "A", icon: "🪥", text: "다 함께 칫솔과 치약을 들고 구석구석 이를 깨끗이 닦아주었어요!" },
+          { id: "B", icon: "🍬", text: "달콤한 사탕과 초콜릿을 입안 가득 넣어주었어요." },
+          { id: "C", icon: "🏃", text: "그냥 모른 척하고 다른 곳으로 이사를 갔어요." }
+        ]
+      },
+      {
+        step: 5,
+        title: "마음 나누기",
+        question: "이가 아프지 않게 된 털숭숭이와 마시멜로 친구들은 서로 어떤 마음이 되었을까요?",
+        hint: "오해가 풀리고 난 뒤의 따뜻한 감정이에요.",
+        choices: [
+          { id: "A", icon: "🤝", text: "무서운 괴물이 아니라 서로를 아껴주는 좋은 친구가 되었어요." },
+          { id: "B", icon: "😡", text: "서로 여전히 의심하고 멀리 떨어져 지냈어요." },
+          { id: "C", icon: "😴", text: "고맙다는 말도 없이 그냥 잠만 잤어요." }
+        ]
+      },
+      {
+        step: 6,
+        title: "내 생활과 연결하기",
+        question: "내 주변의 친구나 동생이 울거나 화를 내고 있다면, 나는 어떻게 다가갈까요?",
+        hint: "꼬마 마시멜로처럼 따뜻한 마음을 보내봐요.",
+        choices: [
+          { id: "A", icon: "👂", text: "“무슨 일 있어? 어디 아프니?” 하고 다정하게 이야기를 들어줘요." },
+          { id: "B", icon: "📢", text: "“왜 시끄럽게 울어!” 하고 같이 화를 내요." },
+          { id: "C", icon: "🙈", text: "내 일이 아니니까 모른 척 조용히 지나쳐요." }
+        ]
+      },
+      {
+        step: 7,
+        title: "나의 건강과 다짐",
+        question: "『이파라파냐무냐무』를 읽고 난 뒤, 오늘부터 내가 꼭 실천하고 싶은 약속은 무엇인가요?",
+        hint: "튼튼한 이와 다정한 마음 둘 다 중요해요!",
+        choices: [
+          { id: "A", icon: "✨", text: "음식을 먹고 난 뒤 3분 동안 구석구석 양치질을 꼼꼼히 할래요!" },
+          { id: "B", icon: "💖", text: "겉모습만 보고 무서워하지 않고 먼저 따뜻한 말을 건넬래요!" },
+          { id: "C", icon: "🌟", text: "양치질도 씩씩하게 잘하고, 친구의 말에도 귀 기울이는 어린이가 될래요!" }
+        ]
+      }
+    ];
+
+    /* ==========================================================================
+       [2] 사운드 시스템 (외부 파일 없이 Web Audio API로 구현)
+       ========================================================================== */
+    class SoundController {
+      constructor() {
+        this.ctx = null;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playPop() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(750, this.ctx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.08);
+        } catch(e) {}
+      }
+      playSuccess() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const start = this.ctx.currentTime + (idx * 0.09);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, start);
+            gain.gain.setValueAtTime(0.25, start);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + 0.18);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(start);
+            osc.stop(start + 0.18);
+          });
+        } catch(e) {}
+      }
+      playFanfare() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const fanfare = [
+            { f: 523.25, d: 0.15, t: 0 },
+            { f: 659.25, d: 0.15, t: 0.16 },
+            { f: 783.99, d: 0.15, t: 0.32 },
+            { f: 1046.5, d: 0.45, t: 0.48 }
+          ];
+          fanfare.forEach(item => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const st = this.ctx.currentTime + item.t;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(item.f, st);
+            gain.gain.setValueAtTime(0.3, st);
+            gain.gain.exponentialRampToValueAtTime(0.001, st + item.d);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(st);
+            osc.stop(st + item.d);
+          });
+        } catch(e) {}
+      }
+    }
+    const sounds = new SoundController();
+
+    /* ==========================================================================
+       [3] 음성 읽어주기 (TTS) 관리자
+       ========================================================================== */
+    class TTSController {
+      constructor() {
+        this.isSpeaking = false;
+      }
+      speak(text, onEnd) {
+        if (!('speechSynthesis' in window)) {
+          showToast('이 브라우저는 음성 읽기를 지원하지 않아요.');
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'ko-KR';
+        utter.rate = 0.92; // 어린이가 듣기 편안한 속도
+        utter.pitch = 1.1; // 친근하고 부드러운 톤
+
+        const icon = document.getElementById('tts-icon-status');
+        if (icon) icon.textContent = '🔊';
+
+        utter.onstart = () => {
+          this.isSpeaking = true;
+          if (icon) icon.textContent = '🗣️';
+        };
+        utter.onend = () => {
+          this.isSpeaking = false;
+          if (icon) icon.textContent = '🔊';
+          if (onEnd) onEnd();
+        };
+        utter.onerror = () => {
+          this.isSpeaking = false;
+          if (icon) icon.textContent = '🔊';
+        };
+        window.speechSynthesis.speak(utter);
+      }
+      stop() {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          this.isSpeaking = false;
+          const icon = document.getElementById('tts-icon-status');
+          if (icon) icon.textContent = '🔊';
+        }
+      }
+    }
+    const tts = new TTSController();
+
+    /* ==========================================================================
+       [4] 앱 상태 관리
+       ========================================================================== */
+    const state = {
+      currentScreen: 'intro', // 'intro', 'question', 'complete'
+      selectedClass: null,
+      selectedStudent: null,
+      currentStepIndex: 0, // 0 ~ 6 (총 7문제)
+      answers: {} // { 1: { choiceId: "A", text: "..." }, 2: ... }
+    };
+
+    /* ==========================================================================
+       [5] 유틸리티 및 토스트 함수
+       ========================================================================== */
+    function showToast(message) {
+      const toast = document.getElementById('toast-message');
+      toast.textContent = message;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2000);
+    }
+
+    function showFeedback(icon, title, desc, callback) {
+      const overlay = document.getElementById('feedback-overlay');
+      const box = document.getElementById('feedback-box');
+      document.getElementById('feedback-icon').textContent = icon;
+      document.getElementById('feedback-title').textContent = title;
+      document.getElementById('feedback-desc').textContent = desc;
+
+      overlay.classList.remove('opacity-0', 'pointer-events-none');
+      box.classList.remove('scale-90');
+      box.classList.add('scale-100');
+
+      setTimeout(() => {
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+        box.classList.remove('scale-100');
+        box.classList.add('scale-90');
+        if (callback) callback();
+      }, 1000);
+    }
+
+    /* ==========================================================================
+       [6] 학급 및 학생 렌더링 로직
+       ========================================================================== */
+    function renderClassButtons() {
+      const container = document.getElementById('class-buttons');
+      container.innerHTML = '';
+      APP_CONFIG.classes.forEach(cls => {
+        const btn = document.createElement('button');
+        btn.className = `py-2.5 px-3 rounded-xl font-bold border-2 text-sm transition-all flex items-center justify-center ${
+          state.selectedClass === cls
+            ? 'bg-orange-500 border-orange-600 text-white shadow'
+            : 'bg-white border-orange-200 text-stone-700 hover:bg-orange-100'
+        }`;
+        btn.textContent = cls;
+        btn.addEventListener('click', () => {
+          sounds.playPop();
+          selectClass(cls);
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function selectClass(cls) {
+      state.selectedClass = cls;
+      state.selectedStudent = null;
+      updateStartButton();
+      renderClassButtons();
+
+      const studentSection = document.getElementById('student-select-section');
+      studentSection.classList.remove('hidden');
+      renderStudentButtons(cls);
+
+      updateConfirmedIdentityUI();
+    }
+
+    function renderStudentButtons(cls) {
+      const container = document.getElementById('student-buttons');
+      container.innerHTML = '';
+      const list = STUDENTS_DATA[cls] || [];
+      list.forEach(name => {
+        const btn = document.createElement('button');
+        btn.className = `py-2 px-2.5 rounded-xl font-bold border text-xs sm:text-sm transition-all text-center ${
+          state.selectedStudent === name
+            ? 'bg-amber-400 border-amber-500 text-amber-950 font-black scale-105 shadow'
+            : 'bg-white border-stone-200 text-stone-700 hover:bg-amber-50'
+        }`;
+        btn.textContent = name;
+        btn.addEventListener('click', () => {
+          sounds.playPop();
+          selectStudent(name);
+        });
+        container.appendChild(btn);
+      });
+    }
+
+    function selectStudent(name) {
+      state.selectedStudent = name;
+      updateStartButton();
+      renderStudentButtons(state.selectedClass);
+      updateConfirmedIdentityUI();
+    }
+
+    function updateConfirmedIdentityUI() {
+      const tag = document.getElementById('selected-identity-tag');
+      if (state.selectedClass && state.selectedStudent) {
+        tag.classList.remove('hidden');
+        document.getElementById('confirmed-class-name').textContent = state.selectedClass;
+        document.getElementById('confirmed-student-name').textContent = state.selectedStudent;
+      } else {
+        tag.classList.add('hidden');
+      }
+    }
+
+    function updateStartButton() {
+      const btn = document.getElementById('btn-start-activity');
+      if (state.selectedClass && state.selectedStudent) {
+        btn.disabled = false;
+        btn.className = "w-full py-4 rounded-2xl font-black text-lg md:text-xl shadow-lg transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-98 text-white cursor-pointer pulse-animation";
+      } else {
+        btn.disabled = true;
+        btn.className = "w-full py-4 rounded-2xl font-black text-lg md:text-xl shadow-lg transition-all flex items-center justify-center gap-2 bg-stone-300 text-stone-500 cursor-not-allowed";
+      }
+    }
+
+    /* ==========================================================================
+       [7] 질문 문항 화면 렌더링 로직
+       ========================================================================== */
+    function renderQuestion(stepIndex) {
+      const question = QUESTIONS_DATA[stepIndex];
+      if (!question) return;
+
+      tts.stop();
+
+      // 헤더 진행률 표시
+      const progressElem = document.getElementById('header-progress');
+      progressElem.classList.remove('hidden');
+      progressElem.classList.add('flex');
+      document.getElementById('progress-text').textContent = `${stepIndex + 1} / ${APP_CONFIG.totalSteps}`;
+      
+      // 비주얼 바 (예: ■■□□□□□)
+      const filled = "■".repeat(stepIndex + 1);
+      const empty = "□".repeat(APP_CONFIG.totalSteps - (stepIndex + 1));
+      document.getElementById('progress-bar-visual').textContent = filled + empty;
+
+      // 단계 뱃지 및 문항 텍스트
+      document.getElementById('question-step-badge').textContent = `STEP ${question.step}`;
+      document.getElementById('question-step-title').textContent = question.title;
+      document.getElementById('question-text').textContent = question.question;
+      document.getElementById('question-hint').textContent = question.hint;
+
+      // 선택지 렌더링
+      const choicesBox = document.getElementById('choices-container');
+      choicesBox.innerHTML = '';
+
+      const currentAnswer = state.answers[question.step];
+
+      question.choices.forEach((choice) => {
+        const isSelected = currentAnswer && currentAnswer.choiceId === choice.id;
+        const btn = document.createElement('button');
+        btn.className = `choice-card w-full p-4 md:p-5 rounded-2xl border-2 text-left flex items-center gap-3.5 transition-all ${
+          isSelected 
+            ? 'selected' 
+            : 'bg-white border-stone-200 hover:border-orange-300 text-stone-800'
+        }`;
+
+        btn.innerHTML = `
+          <span class="text-3xl p-2 bg-orange-100 rounded-xl flex-shrink-0">${choice.icon}</span>
+          <div class="flex-1">
+            <span class="text-xs font-black text-orange-600 block mb-0.5">보기 ${choice.id}</span>
+            <span class="text-base md:text-lg font-bold leading-snug">${choice.text}</span>
+          </div>
+          <span class="text-xl ${isSelected ? 'text-orange-500' : 'text-stone-300'}">
+            ${isSelected ? '✔️' : '⚪'}
+          </span>
+        `;
+
+        btn.addEventListener('click', () => {
+          sounds.playPop();
+          state.answers[question.step] = {
+            stepTitle: question.title,
+            questionText: question.question,
+            choiceId: choice.id,
+            icon: choice.icon,
+            choiceText: choice.text
+          };
+          renderQuestion(state.currentStepIndex);
+          updateNavButtons();
+          showFeedback('👏', '멋진 선택!', '생각이 쑥쑥 자라나고 있어요!');
+        });
+
+        choicesBox.appendChild(btn);
+      });
+
+      updateNavButtons();
+    }
+
+    function updateNavButtons() {
+      const prevBtn = document.getElementById('btn-prev');
+      const nextBtn = document.getElementById('btn-next');
+
+      // 이전 버튼 활성화 여부
+      prevBtn.disabled = (state.currentStepIndex === 0);
+
+      // 다음 버튼 활성화 여부 (현재 질문에 답을 골랐는지)
+      const currentQ = QUESTIONS_DATA[state.currentStepIndex];
+      const hasAnswer = Boolean(state.answers[currentQ.step]);
+      nextBtn.disabled = !hasAnswer;
+
+      if (state.currentStepIndex === APP_CONFIG.totalSteps - 1) {
+        nextBtn.innerHTML = '<span>완료하기</span> <span>🎉</span>';
+      } else {
+        nextBtn.innerHTML = '<span>다음</span> <span>➡️</span>';
+      }
+    }
+
+    /* ==========================================================================
+       [8] 완료 화면 및 결과 요약 렌더링
+       ========================================================================== */
+    function renderCompleteScreen() {
+      tts.stop();
+      sounds.playFanfare();
+
+      document.getElementById('header-progress').classList.add('hidden');
+      document.getElementById('bottom-nav').classList.add('hidden');
+
+      document.getElementById('complete-student-name').textContent = 
+        `${state.selectedClass} ${state.selectedStudent}`;
+
+      // 요약 카드 리스트 채우기
+      const summaryBox = document.getElementById('my-answers-summary');
+      summaryBox.innerHTML = '';
+
+      QUESTIONS_DATA.forEach(q => {
+        const ans = state.answers[q.step];
+        const card = document.createElement('div');
+        card.className = "p-3.5 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-3";
+        card.innerHTML = `
+          <span class="text-2xl mt-0.5">${ans ? ans.icon : '✨'}</span>
+          <div class="flex-1">
+            <div class="text-xs font-bold text-orange-600 mb-0.5">STEP ${q.step}. ${q.title}</div>
+            <div class="text-sm font-semibold text-stone-800 leading-snug">${ans ? ans.choiceText : '미선택'}</div>
+          </div>
+        `;
+        summaryBox.appendChild(card);
+      });
+
+      // 로컬 스토리지에 결과 저장 시뮬레이션
+      try {
+        const record = {
+          class: state.selectedClass,
+          student: state.selectedStudent,
+          date: new Date().toISOString(),
+          answers: state.answers
+        };
+        localStorage.setItem(`book_activity_${Date.now()}`, JSON.stringify(record));
+      } catch(e) {}
+    }
+
+    /* ==========================================================================
+       [9] 화면 전환 관리
+       ========================================================================== */
+    function switchScreen(screenName) {
+      state.currentScreen = screenName;
+
+      const intro = document.getElementById('screen-intro');
+      const question = document.getElementById('screen-question');
+      const complete = document.getElementById('screen-complete');
+      const bottomNav = document.getElementById('bottom-nav');
+
+      [intro, question, complete].forEach(s => s.classList.remove('active'));
+
+      if (screenName === 'intro') {
+        intro.classList.add('active');
+        bottomNav.classList.add('hidden');
+        document.getElementById('header-progress').classList.add('hidden');
+      } else if (screenName === 'question') {
+        question.classList.add('active');
+        bottomNav.classList.remove('hidden');
+        renderQuestion(state.currentStepIndex);
+      } else if (screenName === 'complete') {
+        complete.classList.add('active');
+        renderCompleteScreen();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ==========================================================================
+       [10] 이벤트 리스너 연결
+       ========================================================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      renderClassButtons();
+
+      // 시작하기 버튼
+      document.getElementById('btn-start-activity').addEventListener('click', () => {
+        sounds.playSuccess();
+        state.currentStepIndex = 0;
+        switchScreen('question');
+      });
+
+      // 이전 문항 버튼
+      document.getElementById('btn-prev').addEventListener('click', () => {
+        if (state.currentStepIndex > 0) {
+          sounds.playPop();
+          state.currentStepIndex--;
+          renderQuestion(state.currentStepIndex);
+        }
+      });
+
+      // 다음 / 완료 버튼
+      document.getElementById('btn-next').addEventListener('click', () => {
+        if (state.currentStepIndex < APP_CONFIG.totalSteps - 1) {
+          sounds.playSuccess();
+          state.currentStepIndex++;
+          renderQuestion(state.currentStepIndex);
+        } else {
+          switchScreen('complete');
+        }
+      });
+
+      // 처음으로 다시하기 버튼
+      document.getElementById('btn-restart').addEventListener('click', () => {
+        sounds.playPop();
+        state.answers = {};
+        state.currentStepIndex = 0;
+        switchScreen('intro');
+      });
+
+      // TTS 읽어주기 (헤더 버튼)
+      document.getElementById('btn-header-tts').addEventListener('click', () => {
+        if (tts.isSpeaking) {
+          tts.stop();
+          return;
+        }
+        if (state.currentScreen === 'intro') {
+          tts.speak("『이파라파냐무냐무』 독후활동에 오신 것을 환영해요! 우리 반과 이름을 고른 뒤 활동을 시작해 보세요.");
+        } else if (state.currentScreen === 'question') {
+          const q = QUESTIONS_DATA[state.currentStepIndex];
+          const choiceTexts = q.choices.map((c, i) => `보기 ${c.id}번: ${c.text}`).join(". ");
+          tts.speak(`${q.question} ${choiceTexts}`);
+        } else if (state.currentScreen === 'complete') {
+          tts.speak(`참 잘했어요! ${state.selectedStudent} 친구가 이파라파냐무냐무 독후활동을 모두 끝냈어요!`);
+        }
+      });
+
+      // 문항 카드 내 질문 전용 TTS 버튼
+      document.getElementById('btn-question-tts').addEventListener('click', () => {
+        if (tts.isSpeaking) {
+          tts.stop();
+        } else {
+          const q = QUESTIONS_DATA[state.currentStepIndex];
+          tts.speak(q.question);
+        }
+      });
+
+      // 요약 복사하기 버튼
+      document.getElementById('btn-copy-summary').addEventListener('click', () => {
+        sounds.playPop();
+        let report = `[이파라파냐무냐무 독후활동 결과]\n`;
+        report += `학생: ${state.selectedClass} ${state.selectedStudent}\n\n`;
+        QUESTIONS_DATA.forEach(q => {
+          const a = state.answers[q.step];
+          report += `${q.step}. ${q.title}\n답변: ${a ? a.choiceText : '미선택'}\n\n`;
+        });
+
+        // execCommand 기반 클립보드 복사
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = report;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        try {
+          document.execCommand('copy');
+          showToast('내 생각이 클립보드에 복사되었어요!');
+        } catch (err) {
+          showToast('복사에 실패했습니다.');
+        }
+        document.body.removeChild(tempTextArea);
+      });
+
+      // 직접 이름 쓰기 토글
+      const customToggle = document.getElementById('btn-custom-name-toggle');
+      const customForm = document.getElementById('custom-name-form');
+      const customInput = document.getElementById('custom-name-input');
+      const customApply = document.getElementById('btn-apply-custom-name');
+
+      customToggle.addEventListener('click', () => {
+        customForm.classList.toggle('hidden');
+        if (!customForm.classList.contains('hidden')) {
+          customInput.focus();
+        }
+      });
+
+      customApply.addEventListener('click', () => {
+        const val = customInput.value.trim();
+        if (!val) {
+          showToast('이름을 입력해주세요!');
+          return;
+        }
+        sounds.playPop();
+        selectStudent(val);
+        showToast(`${val} 학생으로 설정되었어요!`);
+      });
+
+      customInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          customApply.click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
